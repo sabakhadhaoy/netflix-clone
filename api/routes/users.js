@@ -53,13 +53,34 @@ router.get('/', verify, (req, res) => {
     return query
       ? User.find().sort({ _id: -1 }).limit(10)
       : User.find()
-          .then(users => res.status(200).json(users))
-          .catch(err => res.status(500).json(err));
+        .then(users => res.status(200).json(users))
+        .catch(err => res.status(500).json(err));
   } else {
     res.status(403).json('You are not an admin');
   }
 });
 
 // GET USER STATS
+
+router.get('/stats', (req, res) => {
+  const today = new Date();
+  const lastYear = today.setFullYear(today.setFullYear() - 1);
+  const monthsArray = ["January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"];
+
+  return User.aggregate([
+    {
+      $project: {
+        month: { $month: "$createdAt" }
+      }
+    }, {
+      $group: {
+        _id: "$month",
+        total: { $sum: 1 }
+      }
+    }
+  ]).then(data => res.status(200).json(data))
+    .catch(err => res.status(500).json(err))
+})
 
 module.exports = router;
